@@ -1,0 +1,34 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      # Relative base so the archive works from any directory, not just Pages.
+      - run: npm run build
+        env:
+          BASE_PATH: ./
+      - name: Package the build
+        run: |
+          cd dist
+          zip -r "../pl-ko-homophones-${GITHUB_REF_NAME}.zip" .
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: pl-ko-homophones-*.zip
+          generate_release_notes: true
